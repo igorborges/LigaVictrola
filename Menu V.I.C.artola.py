@@ -207,13 +207,13 @@ def menuLogin():
     usuario = raw_input("\nBEM VINDO AO MENU DE CONVITES E CONSULTAS DAS LIGAS V.I.C.TROLA\n\nComo quem voce deseja logar?\n[1] - Victor\n[2] - Igor\n[3] - Victor no PC do Igor =)\n")
 
     if usuario.replace("[", "").replace("]", "") == "1":
-        map = ["victorrez85@yahoo.com.br", "vbio2010",
+        map = ["victorrez85@yahoo.com.br", "",
                "C:\\Users\\victo\\Dropbox\\Outros\\Entretenimento\\Cartola\\Temp2018\\Copa Victrola-2018.xlsx"]
     elif usuario.replace("[", "").replace("]", "") == "2":
-        map = ["borges_igor@yahoo.com.br", "A5g6x6n5",
+        map = ["borges_igor@yahoo.com.br", "",
                'C:\\Users\\igorb\\Documents\\Dropbox\\Temp2017\\Copa Victrola-2018.xlsx']
     elif usuario.replace("[", "").replace("]", "") == "3":
-        map = ["victorrez85@yahoo.com.br", "vbio2010",
+        map = ["victorrez85@yahoo.com.br", "",
                'C:\\Users\\igorb\\Documents\\Dropbox\\Temp2017\\Copa Victrola-2018.xlsx']
     else:
         print "usuario nao encontrado!"
