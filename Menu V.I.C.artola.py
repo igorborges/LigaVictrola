@@ -37,7 +37,7 @@ def criaLiga(token, nomeDaLiga, quantidadeDeTimes):
         "quantidade_times": int(quantidadeDeTimes),
         "dataInicioRodada": "",
         "dataFimRodada": "",
-        "descricao": nomeDaLiga,
+        "descricao": "Cadastro em para futuros convites: https://goo.gl/forms/i2rXZ49urLSAP5dQ2 Ou se garanta fazendo um investimento de R$1,00 por liga. Zap (64)99979-8012",
         "nome": nomeDaLiga,
         "fim_rodada": None,
         "tipo_trofeu": 1,
@@ -190,14 +190,14 @@ def buscaPontuacoes(workbookPath):
             time = time[:-1]
         times.append(time)
         response = requests.get('https://api.cartolafc.globo.com/time/slug/' + time, verify=False)
-        # print time + " - " + str(response.json()['pontos'])
-        print ".",
+        print time + " - " + str(response.json()['pontos']).replace(".", ",")
+        # print ".",
         pontuacaoSheet.cell(lin, 1).value = time
-        pontuacaoSheet.cell(lin, 2).value = str(response.json()['pontos'])
+        pontuacaoSheet.cell(lin, 2).value = str(response.json()['pontos']).replace(".", ",")
         lin += 1
         time = ranking.cell(lin, col).value  # pega o proximo time do ranking
     # print times
-    wb.save(workbookPath)
+    # wb.save(workbookPath)
     print "\nPlanilha salva com sucesso!"
     return times
 
@@ -352,47 +352,6 @@ def main():
             buscaPontuacoes(map[2])
 
         menu = menuPrincipal()
-        # # criarLiga = raw_input("Deseja criar a liga?\n[S] - Sim\n[N] - Nao\n")
-        # #
-        # # numLiga = raw_input("Qual sera a liga(ex: I, II, III ...)?\n")
-        # # liga = "i-liga-v-i-c-trola"
-        #
-        # # if criarLiga.lower() == 's':
-        # #     criaLiga(token, liga)
-        #
-        # deveSerConvidado = raw_input("Quem deve ser convidado?\n[P] - Pagantes\n[N] - Nao pagantes\n[A] - Ambos\n[outra letra] - Ninguem\n")
-        # times_para_convidar = buscaTimes(deveSerConvidado.lower())
-        # timesQueJaAceitaram = []
-        # timesJaConvidados = []
-        # checaTimesConvidados(token, liga, timesQueJaAceitaram, timesJaConvidados)
-        # enviaConvites(token, liga, times_para_convidar)
-        #
-        # #
-        # # for time in timesQueJaAceitaram:
-        # #     time = time.lower().replace(" ", "-").replace(".","-")  # pega o time, passa pra minusculo e tira os caracteres especiais e espacos
-        # #     if time[time.__len__() - 1] == '-':  # se o time terminar com "-", remove o "-" da ultima posicao
-        # #         time = time[:-1]
-        # #     try:
-        # #         times_para_convidar.remove(time)
-        # #     except: pass
-        # #
-        # # for time in timesJaConvidados:
-        # #     time = time.lower().replace(" ", "-").replace(".","-")  # pega o time, passa pra minusculo e tira os caracteres especiais e espacos
-        # #     if time[time.__len__() - 1] == '-':  # se o time terminar com "-", remove o "-" da ultima posicao
-        # #         time = time[:-1]
-        # #     try:
-        # #         times_para_convidar.remove(time)
-        # #     except: pass
-        # #
-        # # print "times para convidar (segundo a planilha), que nao foram convidados: "
-        # # for time in times_para_convidar:
-        # #     print " - " + time
-        # # print "\ntimes que ja aceitaram: "
-        # # for time in timesQueJaAceitaram:
-        # #     print " - " + time
-        # # print "\ntimes convidados que nao aceitaram: "
-        # # for time in timesJaConvidados:
-        # #     print " - " + time
 
 
 if __name__ == "__main__":
