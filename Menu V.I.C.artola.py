@@ -4,12 +4,15 @@ import openpyxl
 from openpyxl import Workbook, worksheet, load_workbook
 # -*- coding: utf-8 -*-
 import sys
+import time
 
 reload(sys)
 sys.setdefaultencoding('utf8')
 import getpass
 import urllib3
+
 urllib3.disable_warnings()
+
 
 # ----------------------------------------------------------------------------------- LOGIN
 def login(user, password):
@@ -24,7 +27,8 @@ def login(user, password):
         "captcha": ""
     }
     header = {'Content-Type': 'application/json; charset=UTF-8'}
-    response = requests.post("https://login.globo.com/api/authentication", data=json.dumps(body), headers=header, verify=False)
+    response = requests.post("https://login.globo.com/api/authentication", data=json.dumps(body), headers=header,
+                             verify=False)
     print response.json()['userMessage']
     return response.json()['glbId']
 
@@ -44,7 +48,8 @@ def criaLiga(token, nomeDaLiga, quantidadeDeTimes):
         "cor_trofeu": 1
     }
     header = {'x-glb-token': token}
-    response = requests.post("https://api.cartolafc.globo.com/auth/liga", data=json.dumps(body), headers=header, verify=False)
+    response = requests.post("https://api.cartolafc.globo.com/auth/liga", data=json.dumps(body), headers=header,
+                             verify=False)
     print response.json()['mensagem']
     if response.status_code == 201:
         return [201, response.json()['slug']]
@@ -96,15 +101,15 @@ def apagaLiga(token, liga):
     print response.json()['mensagem']
 
 
-# -----------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------- BUSCA TIMES PARA CONVITE
 def buscaTimes(deveSerConvidado, workbookPath, numeroDaLiga):
     wb = openpyxl.load_workbook(filename=workbookPath)  # abre o arquivo
     ranking = wb['Para convites']
 
     col = -1
-    for i in xrange(5,100):
+    for i in xrange(5, 100):
         try:
-            if ranking.cell(2,i).value.lower() == numeroDaLiga.lower():
+            if ranking.cell(2, i).value.lower() == numeroDaLiga.lower():
                 col = i
                 break
         except:
@@ -150,7 +155,7 @@ def buscaTimes(deveSerConvidado, workbookPath, numeroDaLiga):
     # ws.add_chart(lc, "D1")
 
 
-# -----------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------- BUSCA TIMES POR RANKING
 def buscaTimesPorRanking(numeroDeTimesConvidados, workbookPath):
     wb = openpyxl.load_workbook(filename=workbookPath)  # abre o arquivo
     ranking = wb.worksheets[0]  # pega a primeira planilha
@@ -173,14 +178,18 @@ def buscaTimesPorRanking(numeroDeTimesConvidados, workbookPath):
     return times
 
 
-# -----------------------------------------------------------------------------------
-def buscaPontuacoes(workbookPath):
+# ----------------------------------------------------------------------------------- BUSCA PONTUACOES E SALVA NA PLANILHA
+def buscaPontuacoes(workbookPath, dictionary):
     wb = openpyxl.load_workbook(filename=workbookPath)  # abre o arquivo
     ranking = wb.worksheets[0]  # pega a primeira planilha
     pontuacaoSheet = wb.worksheets[2]
     times = []  # cria um array vazio
     lin = 3
     col = 4
+
+    pontuacaoSheet.cell(lin - 1, 1).value = "Time"
+    pontuacaoSheet.cell(lin - 1, 2).value = "Pontuacao"
+    pontuacaoSheet.cell(lin - 1, 3).value = "Quais ligas passou"
 
     time = ranking.cell(lin, col).value  # pega o primeiro time do ranking
     while (time != None):  # enquanto o campo nao for vazio
@@ -194,17 +203,22 @@ def buscaPontuacoes(workbookPath):
         # print ".",
         pontuacaoSheet.cell(lin, 1).value = time
         pontuacaoSheet.cell(lin, 2).value = str(response.json()['pontos']).replace(".", ",")
+        if time in dictionary:
+            pontuacaoSheet.cell(lin, 3).value = dictionary[time]
+        else:
+            pontuacaoSheet.cell(lin, 3).value = " "
         lin += 1
         time = ranking.cell(lin, col).value  # pega o proximo time do ranking
     # print times
-    # wb.save(workbookPath)
+    wb.save(workbookPath)
     print "\nPlanilha salva com sucesso!"
     return times
 
 
-# -----------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------- MENU LOGIN
 def menuLogin():
-    usuario = raw_input("\nBEM VINDO AO MENU DE CONVITES E CONSULTAS DAS LIGAS V.I.C.TROLA\n\nComo quem voce deseja logar?\n[1] - Victor\n[2] - Igor\n[3] - Victor no PC do Igor =)\n")
+    usuario = raw_input(
+        "\nBEM VINDO AO MENU DE CONVITES E CONSULTAS DAS LIGAS V.I.C.TROLA\n\nComo quem voce deseja logar?\n[1] - Victor\n[2] - Igor\n[3] - Victor no PC do Igor =)\n")
 
     if usuario.replace("[", "").replace("]", "") == "1":
         map = ["victorrez85@yahoo.com.br", "",
@@ -220,7 +234,7 @@ def menuLogin():
     return map
 
 
-# -----------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------- MENU PRINCIPAL
 def menuPrincipal():
     menu = raw_input("\n\n------------------------------MENU------------------------------\n"
                      "[1] - Criar Liga\n"
@@ -237,16 +251,15 @@ def menuPrincipal():
 
 
 # -----------------------------------------------------------------------------------
-
-
-
 def main():
+    global time
     map = menuLogin()
     token = login(map[0], map[1])
 
     menu = menuPrincipal()
     ligaCriada = False
     while menu != "9":
+        # [1] - Criar Liga
         if menu == "1":
             numeroDaLiga = raw_input("Qual sera a liga (ex: I, II, III ...)?\n")
             liga = numeroDaLiga + " Liga V.I.C.trola"
@@ -255,12 +268,13 @@ def main():
             if response[0] == 201:
                 slug = response[1]
                 ligaCriada = True
-
+        # [2] - Convidar pagantes
         elif menu == "2":
             if not ligaCriada:
                 numeroDaLiga = raw_input(
                     "Para qual liga deverao ser enviados os convites (ex: I, II, III ...)?\n").lower()
                 slug = numeroDaLiga + "-liga-v-i-c-trola"
+                ligaCriada = True
             times_para_convidar = buscaTimes("p", map[2], numeroDaLiga)
             print ""
             for time in times_para_convidar:
@@ -270,12 +284,13 @@ def main():
                 times_para_convidar.__len__()) + " times pagantes para convidar.\nConfirma? (s ou n)\n")
             if confirmacao.lower() == "s":
                 enviaConvites(token, slug, times_para_convidar)
-
+        # [3] - Convidar nao pagantes
         elif menu == "3":
             if not ligaCriada:
                 numeroDaLiga = raw_input(
                     "Para qual liga deverao ser enviados os convites (ex: I, II, III ...)?\n").lower()
                 slug = numeroDaLiga + "-liga-v-i-c-trola"
+                ligaCriada = True
             times_para_convidar = buscaTimes("f", map[2], numeroDaLiga)
             print "Times nao pagantes encontrados:"
             for time in times_para_convidar:
@@ -286,13 +301,13 @@ def main():
                     times_para_convidar.__len__()) + " times nao pagantes para convidar.\nConfirma (s ou n)?\n")
             if confirmacao.lower() == "s":
                 enviaConvites(token, slug, times_para_convidar)
-
+        # [4] - Convidar por letra da planilha
         elif menu == "4":
             if not ligaCriada:
                 numeroDaLiga = raw_input(
                     "Para qual liga deverao ser enviados os convites (ex: I, II, III ...)?\n").lower()
                 slug = numeroDaLiga + "-liga-v-i-c-trola"
-
+                ligaCriada = True
             letra = raw_input("Qual a letra da planilha deseja enviar os convites?\n").lower()
 
             times_para_convidar = buscaTimes(letra, map[2], numeroDaLiga)
@@ -305,12 +320,13 @@ def main():
                     times_para_convidar.__len__()) + " times para convidar.\nConfirma (s ou n)?\n")
             if confirmacao.lower() == "s":
                 enviaConvites(token, slug, times_para_convidar)
-
+        # [5] - Convidar 5 primeiros do ranking
         elif menu == "5":
             if not ligaCriada:
                 numeroDaLiga = raw_input(
                     "Para qual liga deverao ser enviados os convites (ex: I, II, III ...)?\n").lower()
                 slug = numeroDaLiga + "-liga-v-i-c-trola"
+                ligaCriada = True
             times_para_convidar = buscaTimesPorRanking(5, map[2], numeroDaLiga)
             print "5 primeiros times do ranking"
             for time in times_para_convidar:
@@ -321,12 +337,13 @@ def main():
                     times_para_convidar.__len__()) + " times (primeiros do ranking).\nConfirma (s ou n)?\n")
             if confirmacao.lower() == "s":
                 enviaConvites(token, slug, times_para_convidar)
-
+        # [6] - Conferir times que ja aceitaram convite
         elif menu == "6":
             if not ligaCriada:
                 numeroDaLiga = raw_input(
                     "Para qual liga deverao ser enviados os convites (ex: I, II, III ...)?\n").lower()
                 slug = numeroDaLiga + "-liga-v-i-c-trola"
+                ligaCriada = True
             timesQueJaAceitaram = []
             timesJaConvidados = []
             checaTimesConvidados(token, slug, timesQueJaAceitaram, timesJaConvidados)
@@ -334,12 +351,13 @@ def main():
             for time in timesQueJaAceitaram:
                 print " - " + time
             print "Total de " + str(timesQueJaAceitaram.__len__()) + " times ja aceitaram o convite"
-
+        # [7] - Conferir times que ainda nao aceitaram o convite
         elif menu == "7":
             if not ligaCriada:
                 numeroDaLiga = raw_input(
                     "Para qual liga deverao ser enviados os convites (ex: I, II, III ...)?\n").lower()
                 slug = numeroDaLiga + "-liga-v-i-c-trola"
+                ligaCriada = True
             timesQueJaAceitaram = []
             timesJaConvidados = []
             checaTimesConvidados(token, slug, timesQueJaAceitaram, timesJaConvidados)
@@ -347,9 +365,46 @@ def main():
             for time in timesJaConvidados:
                 print " - " + time
             print "Total de " + str(timesJaConvidados.__len__()) + " times nao aceitaram o convite"
-
+        # [8] - Busca pontuacao dos times
         elif menu == "8":
-            buscaPontuacoes(map[2])
+            dictionary = {}
+            rodadaAtual = raw_input(
+                "Qual o numero da rodada que deseja buscar os confrontos?\n")
+
+            print "Aguarde enquanto buscamos pelas ligas...\n"
+            ligas = ['i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii', 'ix', 'x',
+                     'xi', 'xii', 'xiii', 'xiv', 'xv', 'xvi', 'xvii', 'xviii', 'xix', 'xx',
+                     'xxi', 'xxii', 'xxiii', 'xxiv', 'xxv', 'xxvi', 'xxvii', 'xxviii', 'xxix', 'xxx',
+                     'xxxi', 'xxxii', 'xxxiii', 'xxxiv', 'xxxv', 'xxxvi', 'xxxvii', 'xxxviii']
+            try:
+                for i in ligas:
+                    headers = {
+                        'x-glb-token': token
+                    }
+                    ligaMataMata = i + '-liga-v-i-c-trola'
+                    response = requests.request("GET", 'https://api.cartolafc.globo.com/auth/liga/' + ligaMataMata,
+                                                headers=headers, verify=False)
+                    if response.status_code == 404:
+                        break
+                    for j in response.json()["chaves_mata_mata"][rodadaAtual]:
+                        response2 = requests.request("GET",
+                                                     'https://api.cartolafc.globo.com/time/id/' + str(j["vencedor_id"]),
+                                                     verify=False)
+                        # print response2.json()["time"]["slug"]
+
+                        # print response2.json()["time"]["slug"] + "  -  " + str(response2.json()["time"]["slug"] in dictionary)
+                        if response2.json()["time"]["slug"] in dictionary:
+                            novaLiga = dictionary[response2.json()["time"]["slug"]]
+                            dictionary[response2.json()["time"]["slug"]] = (novaLiga + ", " + i)
+                            # print dictionary[response2.json()["time"]["slug"]]
+                        else:
+                            dictionary[response2.json()["time"]["slug"]] = i
+                    print ligaMataMata + " - ok"
+            except:
+                pass
+            # for a in dictionary:
+            #     print a + " - " + dictionary[a]
+            buscaPontuacoes(map[2], dictionary)
 
         menu = menuPrincipal()
 
