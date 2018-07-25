@@ -11,7 +11,9 @@ sys.setdefaultencoding('utf8')
 import getpass
 import urllib3
 
+phones = []  # cria um array vazio
 urllib3.disable_warnings()
+from twilio.rest import Client
 
 
 # ----------------------------------------------------------------------------------- LOGIN
@@ -41,7 +43,7 @@ def criaLiga(token, nomeDaLiga, quantidadeDeTimes):
         "quantidade_times": int(quantidadeDeTimes),
         "dataInicioRodada": "",
         "dataFimRodada": "",
-        "descricao": "Cadastro em para futuros convites: https://goo.gl/forms/i2rXZ49urLSAP5dQ2 Ou se garanta fazendo um investimento de R$1,00 por liga. Zap (64)99979-8012",
+        "descricao": "Cadastro para futuros convites: https://goo.gl/forms/i2rXZ49urLSAP5dQ2 Ou se garanta fazendo um investimento de R$1,00 por liga. Zap (64)99979-8012",
         "nome": nomeDaLiga,
         "fim_rodada": None,
         "tipo_trofeu": 1,
@@ -61,6 +63,36 @@ def enviaConvites(token, liga, times_para_convidar):
     headers = {'x-glb-token': token}
     response = requests.request("POST", url, data=json.dumps(times_para_convidar), headers=headers, verify=False)
     print(response.json()['mensagem'])
+
+    if (phones.__len__() > 0):
+        message = "Convite para a nova liga V.I.C.trola enviado. Aceita la velhinho!! =)"
+        headers = {'Cookie': 'PHPSESSID=vnfe2oqmmc225nm19lmrvbqib1; _ga=GA1.2.1172147572.1531787941; _gid=GA1.2.668509921.1532482559'}
+        response = requests.request("GET", 'https://panel.apiwha.com/save_channel_state.php?channel=556499798012&state=ONLINE',
+                                headers=headers, verify=False)
+
+        numberOfMessages = 0
+        if(response.json()["success"] == True):
+            print "\nApiWha Online - Criacao de mensagens"
+            for phone in phones:
+                print phone.split(":")[0] + " - ",
+                if(enviaMensagem(phone.split(":")[1], message)):
+                    print "ok"
+                    numberOfMessages = numberOfMessages + 1
+                else:
+                    print "error"
+
+    # headers = {'Cookie': '_ga=GA1.2.1476949578.1531619632; _gid=GA1.2.1740126326.1531619632; PHPSESSID=dnju76hl2k1g9tt1446cpn3eb1'}
+
+
+
+    # response = requests.request("GET", 'https://panel.apiwha.com/save_channel_state.php?channel=553191079477&state=OFFLINE',
+    #                             headers=headers, verify=False)
+
+        print "\nNumero de mensagens criadas para envio: " + str(numberOfMessages) + "\nVerifique o andamento do envio das mensagens no site https://panel.apiwha.com, e DESLIGUE SEU NUMERO no site apos a conclusao dos envios."
+    else:
+        print "Nenhum telefone cadastrado para envio de mensagem WhatsApp. Preencha a planilha com o numero desejado e execute o programa novamente."
+    global phones
+    phones = []
 
 
 # ----------------------------------------------------------------------------------- CHECA TIMES CONVIDADOS
@@ -105,7 +137,6 @@ def apagaLiga(token, liga):
 def buscaTimes(deveSerConvidado, workbookPath, numeroDaLiga):
     wb = openpyxl.load_workbook(filename=workbookPath)  # abre o arquivo
     ranking = wb['Para convites']
-
     col = -1
     for i in xrange(5, 100):
         try:
@@ -133,6 +164,9 @@ def buscaTimes(deveSerConvidado, workbookPath, numeroDaLiga):
         try:
             if ranking.cell(lin, col).value.lower() == deveSerConvidado or deveSerConvidado == 'a':
                 times.append(time)  # adiciona o time na lista
+                phone = str(ranking.cell(lin, 51).value)
+                if phone !='None':
+                    phones.append(time + ":" + phone)
         except:
             pass
         # ranking.cell(lin, 5).value = ranking.cell(lin, 5).value + '*'
@@ -178,7 +212,7 @@ def buscaTimesPorRanking(numeroDeTimesConvidados, workbookPath):
     return times
 
 
-# ----------------------------------------------------------------------------------- BUSCA PONTUACOES E SALVA NA PLANILHA
+# -------------------------------------------------------------------------------- BUSCA PONTUACOES E SALVA NA PLANILHA
 def buscaPontuacoes(workbookPath, dictionary):
     wb = openpyxl.load_workbook(filename=workbookPath)  # abre o arquivo
     ranking = wb.worksheets[0]  # pega a primeira planilha
@@ -215,19 +249,32 @@ def buscaPontuacoes(workbookPath, dictionary):
     return times
 
 
+# -------------------------------------------------------------------------------- BUSCA PONTUACOES E SALVA NA PLANILHA
+def enviaMensagem(phone, message):
+    try:
+        response = requests.request("GET",
+                                'https://panel.apiwha.com/send_message.php?apikey=QN2QM1QO9AGB8EDWASH5&number=' + str(phone) + '&text=' + message,
+                                verify=False)
+        if(response.json()["result_code"] == 0):
+            return True
+        return False
+    except:
+        return False
+
+
 # ----------------------------------------------------------------------------------- MENU LOGIN
 def menuLogin():
     usuario = raw_input(
         "\nBEM VINDO AO MENU DE CONVITES E CONSULTAS DAS LIGAS V.I.C.TROLA\n\nComo quem voce deseja logar?\n[1] - Victor\n[2] - Igor\n[3] - Victor no PC do Igor =)\n")
 
     if usuario.replace("[", "").replace("]", "") == "1":
-        map = ["victorrez85@yahoo.com.br", "",
+        map = ["victorrez85@yahoo.com.br", "vbio2010",
                "C:\\Users\\victo\\Dropbox\\Outros\\Entretenimento\\Cartola\\Temp2018\\Copa Victrola-2018.xlsx"]
     elif usuario.replace("[", "").replace("]", "") == "2":
-        map = ["borges_igor@yahoo.com.br", "",
+        map = ["borges_igor@yahoo.com.br", "A5g6x6n5",
                'C:\\Users\\igorb\\Documents\\Dropbox\\Temp2017\\Copa Victrola-2018.xlsx']
     elif usuario.replace("[", "").replace("]", "") == "3":
-        map = ["victorrez85@yahoo.com.br", "",
+        map = ["victorrez85@yahoo.com.br", "vbio2010",
                'C:\\Users\\igorb\\Documents\\Dropbox\\Temp2017\\Copa Victrola-2018.xlsx']
     else:
         print "usuario nao encontrado!"
@@ -327,7 +374,7 @@ def main():
                     "Para qual liga deverao ser enviados os convites (ex: I, II, III ...)?\n").lower()
                 slug = numeroDaLiga + "-liga-v-i-c-trola"
                 ligaCriada = True
-            times_para_convidar = buscaTimesPorRanking(5, map[2], numeroDaLiga)
+            times_para_convidar = buscaTimesPorRanking(5, map[2])
             print "5 primeiros times do ranking"
             for time in times_para_convidar:
                 print " - " + time
@@ -369,7 +416,7 @@ def main():
         elif menu == "8":
             dictionary = {}
             rodadaAtual = raw_input(
-                "Qual o numero da rodada que deseja buscar os confrontos?\n")
+                "Qual o numero da rodada que deseja buscar os confrontos (ex: 1, 2, 3, 4 ...)?\n")
 
             print "Aguarde enquanto buscamos pelas ligas...\n"
             ligas = ['i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii', 'ix', 'x',
@@ -405,6 +452,16 @@ def main():
             # for a in dictionary:
             #     print a + " - " + dictionary[a]
             buscaPontuacoes(map[2], dictionary)
+
+        # elif menu == "10":
+
+
+
+
+            # response = requests.request("GET",
+            #                             'https://panel.apiwha.com/save_channel_state.php?channel=556499798012&state=OFFLINE',
+            #                             headers=headers, verify=False)
+            # print response.json()
 
         menu = menuPrincipal()
 
